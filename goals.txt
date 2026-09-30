@@ -1,0 +1,92 @@
+relay-chat/
+│
+├── app/
+│   ├── __init__.py
+│   ├── main.py
+│   │
+│   ├── core/
+│   │   ├── config.py
+│   │   └── database.py
+│   │
+│   ├── api/
+│   │   └── routes/
+│   │       ├── health.py
+│   │       └── rooms.py
+│   │
+│   ├── websocket/
+│   │   ├── connection.py
+│   │   ├── manager.py
+│   │   └── events.py
+│   │
+│   ├── models/
+│   │   ├── room.py
+│   │   └── message.py
+│   │
+│   ├── schemas/
+│   │   ├── room.py
+│   │   └── message.py
+│   │
+│   └── services/
+│       ├── room.py
+│       └── message.py
+│
+├── tests/
+│
+├── .env
+├── .gitignore
+├── requirements.txt
+└── README.md
+
+
+CHAT V1
+│
+├── ⭐ WebSockets
+├── ⭐ Global chat
+├── ⭐ Temporary usernames
+├── ⭐ Message protocol
+├── ⭐ Connection management
+V2
+├── ⭐ Private rooms
+├── ⭐ Room passwords
+├── ⭐ Room membership
+V3
+├── ⭐ MongoDB persistence
+├── ⭐ Message history
+├── ⭐ Cursor pagination
+V4
+├── ⭐ Presence
+├── ⭐ Heartbeats
+├── ⭐ Reconnection
+V5
+├── ⭐ Authentication
+├── ⭐ Access + refresh tokens
+├── ⭐ Multi-device sessions
+├── ⭐ Token revocation
+├── ⭐ Logout / logout-all
+V6
+├── Typing indicators
+├── Read receipts
+├── Edit/delete
+├── Unread counts
+SCALE
+└── ⭐ Redis / multi-server architecture
+
+
+relay-chat/
+│
+├── app/
+│   ├── main.py
+│   │
+│   └── websocket/
+│       ├── manager.py
+│       └── events.py
+│
+├── tests/
+│
+├── .env
+├── .gitignore
+├── requirements.txt
+└── README.md
+
+
+
