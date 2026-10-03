@@ -1,5 +1,55 @@
 from fastapi import WebSocket,HTTPException,Depends
 
+from app.websocket.connection import ClientConnection
+from app.websocket.events import IdentifyEvent
+
+class ConnectionManagerV3:
+    def __init__(self):
+        self.clients:dict[WebSocket,ClientConnection]={} #socket->client
+        self.rooms:dict[str,set[ClientConnection]]={}    #room_id->set of clients
+
+    def register(self,websocket:WebSocket,username:IdentifyEvent):
+        #basically : {websocket,username,set[user joined rooms]}
+        client_connection=ClientConnection(websocket,username.username)
+
+        #Load it in memory - this lad needs to be online
+        self.clients[websocket]=client_connection
+
+        return client_connection
+
+
+    #DISCONNECT
+    def unregister(self,websocket:WebSocket):
+
+        #Remove him from rooms
+        client_connection=self.clients[websocket]
+        rooms=client_connection.rooms.copy()
+
+        for room in rooms:
+            self.rooms[room].remove(client_connection)
+            if not self.rooms[room]:
+                del self.rooms[room]
+
+        self.clients[websocket].rooms.clear() #not needed auto garbage collector will delete it
+        del self.clients[websocket]
+        
+
+        
+
+
+
+
+
+
+
+
+
+    
+    
+
+    
+    
+
 '''class ConnectionManager:
 
     def __init__(self):
@@ -41,7 +91,7 @@ from fastapi import WebSocket,HTTPException,Depends
             del self.rooms[room_id]
 '''
 
-class ConnectionManager2:
+'''class ConnectionManager2:
 
     def __init__(self):
         self.rooms = {}
@@ -89,3 +139,4 @@ class ConnectionManager2:
         
 
 
+'''
