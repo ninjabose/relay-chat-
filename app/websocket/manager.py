@@ -11,9 +11,9 @@ class ConnectionManagerV3:
         self.clients:dict[WebSocket,ClientConnection]={} #socket->client
         self.rooms:dict[str,set[ClientConnection]]={}    #room_id->set of clients
 
-    def register(self,websocket:WebSocket,username:IdentifyEvent):
+    def register(self,websocket:WebSocket,username:str):
         #basically : {websocket,username,set[user joined rooms]}
-        client_connection=ClientConnection(websocket,username.username)
+        client_connection=ClientConnection(websocket,username)
 
         #Load it in memory - this lad needs to be online
         self.clients[websocket]=client_connection
