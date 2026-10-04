@@ -1,7 +1,10 @@
 from fastapi import WebSocket,HTTPException,Depends
+import secrets
+import string
 
 from app.websocket.connection import ClientConnection
 from app.websocket.events import IdentifyEvent
+
 
 class ConnectionManagerV3:
     def __init__(self):
@@ -17,7 +20,6 @@ class ConnectionManagerV3:
 
         return client_connection
 
-
     #DISCONNECT
     def unregister(self,websocket:WebSocket):
 
@@ -32,6 +34,81 @@ class ConnectionManagerV3:
 
         self.clients[websocket].rooms.clear() #not needed auto garbage collector will delete it
         del self.clients[websocket]
+
+    def join_room(self,client_connection:ClientConnection,room_id:str):
+
+        if room_id not in self.rooms:
+            return
+
+        if client_connection in self.rooms[room_id] or room_id in client_connection.rooms:
+            return
+        #websocket=client_connection.websocket
+        self.rooms[room_id].add(client_connection)
+        #self.clients[websocket]=client_connection
+        client_connection.rooms.add(room_id)
+
+    def create_room(self,client_connection:ClientConnection): #room_id:str->
+
+        #Generate group id
+        while True:
+            alphabet=string.ascii_uppercase + string.digits
+            room_id=''.join(secrets.choice(alphabet) for _ in range(6))
+            if room_id not in self.rooms:
+                self.rooms[room_id]={client_connection}
+                break
+        client_connection.rooms.add(room_id)
+        return room_id
+
+    def leave_room(self,client_connection:ClientConnection,room_id:str):
+
+        if room_id not in self.rooms or client_connection not in self.rooms[room_id]:
+            return
+
+        if room_id not in client_connection.rooms:
+            return
+
+        self.rooms[room_id].remove(client_connection)
+        client_connection.rooms.remove(room_id)
+
+        #Delete room if lust guy leaves
+        if not self.rooms[room_id]:
+            del self.rooms[room_id]
+
+
+        return
+
+    async def broadcast_room(self,client_connection:ClientConnection,message:str,room_id):
+
+        if room_id not in self.rooms or client_connection not in self.rooms[room_id]:
+            return
+
+        if room_id not in client_connection.rooms:
+            return
+
+        room=self.rooms[room_id]
+
+        for recipient in room:
+            webskt=recipient.websocket
+            await webskt.send_json({
+                'type':'message',
+                'room_id':room_id,
+                'content':message
+            })
+
+        return
+
+
+
+        
+
+
+
+
+
+
+
+
+
         
 
         
