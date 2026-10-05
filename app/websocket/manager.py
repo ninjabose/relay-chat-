@@ -77,22 +77,24 @@ class ConnectionManagerV3:
 
         return
 
-    async def broadcast_room(self,client_connection:ClientConnection,message:str,room_id):
+    async def broadcast_room(self,client_connection:ClientConnection,payload:dict):
 
-        if room_id not in self.rooms or client_connection not in self.rooms[room_id]:
+        group_id=payload['group_id']
+
+        if group_id not in self.rooms or client_connection not in self.rooms[group_id]:
             return
 
-        if room_id not in client_connection.rooms:
+        if group_id not in client_connection.rooms:
             return
 
-        room=self.rooms[room_id]
+        room=self.rooms[group_id]
 
         for recipient in room:
             webskt=recipient.websocket
             await webskt.send_json({
                 'type':'message',
-                'room_id':room_id,
-                'content':message
+                'room_id':group_id,
+                'content':payload['message']
             })
 
         return

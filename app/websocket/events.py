@@ -11,6 +11,14 @@ class Event(str,Enum):
     MESSAGE='message'
     DISCONNECT='disconnect'
 
+class ServerEvent(str,Enum):
+    ROOM_CREATED='room_created'
+    ROOM_JOINED='room_joined'
+    ROOM_LEFT='room_left'
+    MESSAGE='message'
+    ERROR='error'
+
+
 
     
 
@@ -30,7 +38,7 @@ class ClientEvents(BaseModel):
 
         #check message
         if self.event_type == Event.MESSAGE:
-            if not self.message.strip():
+            if not self.message or not self.message.strip():
                 raise ValueError('message can not be empty')
         return self
 
@@ -48,9 +56,17 @@ class IdentifyEvent(BaseModel):
             raise ValueError("Username contains invalid characters")
 
         return value
-    
 
-        
+
+
+class ServerResponse(BaseModel):
+    event_type:ServerEvent
+    group_id:str|None=None
+    message:str|None=None
+    username:str|None=None
+
+
+
         
             
 

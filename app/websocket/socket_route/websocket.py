@@ -1,7 +1,7 @@
 from fastapi import APIRouter,WebSocket,WebSocketDisconnect,Depends
 
 
-from app.websocket.events import IdentifyEvent,ClientEvents,Event
+from app.websocket.events import IdentifyEvent,ClientEvents,Event,ServerEvent,ServerResponse
 from app.websocket.manager import ConnectionManagerV3 as manager
 
 
@@ -29,19 +29,42 @@ async def group_chat(websocket:WebSocket):
             #create room
             if client_data.event_type == Event.CREATE_ROOM:
                 group_id= await manager.create_room(client_connection)
-                await websocket.send_text(group_id)
+
+                response=ServerResponse(
+                    event_type=ServerEvent.ROOM_CREATED,
+                    group_id=group_id
+                    )
+                await websocket.send_json(response.model_dump())
 
             #join room
             elif client_data.event_type==Event.JOIN_ROOM:
                  manager.join_room(client_connection,client_data.group_id)
+                 response=ServerResponse(
+                     event_type=ServerEvent.ROOM_JOINED,
+                     group_id=client_data.group_id
+                 )
+                 await websocket.send_json(response.model_dump())
 
             #leave room 
             elif client_data.event_type==Event.LEAVE_ROOM:
                  manager.leave_room(client_connection,client_data.group_id)
+                 response=ServerResponse(
+                     event_type=ServerEvent.ROOM_LEFT,
+                     group_id=client_data.group_id
+                 )
+                 await websocket.send_json(response.model_dump())
 
             #message
             elif client_data.event_type==Event.MESSAGE:
-                await manager.broadcast_room(client_connection,client_data.message,client_data.group_id)
+                
+                response=ServerResponse(
+                    event_type=ServerEvent.MESSAGE,
+                    group_id=client_data.group_id,
+                    message=client_data.message
+
+                )
+
+                await manager.broadcast_room(client_connection,response.model_dump())
 
             
     except WebSocketDisconnect:
