@@ -3,7 +3,7 @@ import secrets
 import string
 
 from app.websocket.connection import ClientConnection
-from app.websocket.events import IdentifyEvent
+from app.websocket.events import IdentifyEvent,JoinResult,LeaveResult
 
 
 class ConnectionManagerV3:
@@ -35,17 +35,20 @@ class ConnectionManagerV3:
         self.clients[websocket].rooms.clear() #not needed auto garbage collector will delete it
         del self.clients[websocket]
 
-    def join_room(self,client_connection:ClientConnection,room_id:str):
+    async def join_room(self,client_connection:ClientConnection,room_id:str):
 
         if room_id not in self.rooms:
-            return
+            return JoinResult.ROOM_NOT_FOUND
 
         if client_connection in self.rooms[room_id] or room_id in client_connection.rooms:
-            return
+            return JoinResult.ALREADY_JOINED
         #websocket=client_connection.websocket
         self.rooms[room_id].add(client_connection)
         #self.clients[websocket]=client_connection
         client_connection.rooms.add(room_id)
+        
+        return JoinResult.SUCCESS
+        
 
     def create_room(self,client_connection:ClientConnection): #room_id:str->
 
@@ -61,11 +64,11 @@ class ConnectionManagerV3:
 
     def leave_room(self,client_connection:ClientConnection,room_id:str):
 
-        if room_id not in self.rooms or client_connection not in self.rooms[room_id]:
-            return
+        if room_id not in self.rooms:
+            return LeaveResult.ROOM_NOT_FOUND
 
-        if room_id not in client_connection.rooms:
-            return
+        if room_id not in client_connection.rooms or client_connection not in self.rooms[room_id]:
+            return LeaveResult.NOT_A_MEMBER
 
         self.rooms[room_id].remove(client_connection)
         client_connection.rooms.remove(room_id)
@@ -75,7 +78,7 @@ class ConnectionManagerV3:
             del self.rooms[room_id]
 
 
-        return
+        return LeaveResult.SUCCESS
 
     async def broadcast_room(self,client_connection:ClientConnection,payload:dict):
 
@@ -92,7 +95,8 @@ class ConnectionManagerV3:
         for recipient in room:
             webskt=recipient.websocket
             await webskt.send_json({
-                'type':'message',
+                'from':client_connection.username,
+                'type':payload['type'],
                 'room_id':group_id,
                 'content':payload['message']
             })

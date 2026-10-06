@@ -18,6 +18,16 @@ class ServerEvent(str,Enum):
     MESSAGE='message'
     ERROR='error'
 
+class JoinResult(str,Enum):
+    SUCCESS='success'
+    ROOM_NOT_FOUND='room_not_found'
+    ALREADY_JOINED='already_joined'
+
+class LeaveResult(str,Enum):
+    SUCCESS='success'
+    ROOM_NOT_FOUND='room_not_found'
+    NOT_A_MEMBER='not_a_member'
+
 
 
     
@@ -64,6 +74,8 @@ class ServerResponse(BaseModel):
     group_id:str|None=None
     message:str|None=None
     username:str|None=None
+    join_result:JoinResult|None=None
+    leave_result:LeaveResult|None=None
 
 
 
