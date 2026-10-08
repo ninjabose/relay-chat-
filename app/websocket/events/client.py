@@ -16,7 +16,7 @@ class ClientEventType(str,Enum):
 
 class InClientCommEvent(BaseModel):
     event_type:ClientEventType
-    group_id:str|None=None
+    room_id:str|None=None
     message:str|None=None
 
     @model_validator(mode='after')
@@ -24,7 +24,7 @@ class InClientCommEvent(BaseModel):
         if self.event_type in {
             ClientEventType.JOIN_ROOM,ClientEventType.LEAVE_ROOM,ClientEventType.MESSAGE
         }:
-            if not self.group_id or not self.group_id.strip():
+            if not self.room_id or not self.room_id.strip():
                 raise ValueError('GroupId Invalid')
 
         #check message
@@ -34,7 +34,7 @@ class InClientCommEvent(BaseModel):
         return self
 
 class InClientIdentifyEvent(BaseModel):
-    username:str=Field(min_length=5,max_length=25)
+    username:str=Field(min_length=3,max_length=25)
 
     @field_validator('username',mode='after')
     @classmethod

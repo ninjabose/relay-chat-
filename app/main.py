@@ -1,4 +1,4 @@
-from fastapi import FastAPI, WebSocket,WebSocketDisconnect
+from fastapi import FastAPI
 
 
 from app.websocket.socket_route.websocket import router as chat_main_router

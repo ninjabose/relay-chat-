@@ -6,7 +6,9 @@ from app.websocket.events.client import InClientIdentifyEvent,InClientCommEvent,
 from app.websocket.events.server import ServerEventType,OutMessageEvent,OutRoomCreatedEvent,OutRoomJoinedEvent,OutRoomLeftEvent,JoinResult,LeaveResult,ErrorEvent
 
 
-from app.websocket.manager import ConnectionManagerV3 as manager
+from app.websocket.manager import ConnectionManagerV3 
+
+manager=ConnectionManagerV3()
 
 
 router =APIRouter()
@@ -32,7 +34,7 @@ async def group_chat(websocket:WebSocket):
 
             #create room
             if client_data.event_type == ClientEventType.CREATE_ROOM:
-                room_id= await manager.create_room(client_connection)
+                room_id=  manager.create_room(client_connection)
 
                 response=OutRoomCreatedEvent(
                     event_type=ServerEventType.ROOM_CREATED,

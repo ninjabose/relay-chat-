@@ -54,7 +54,7 @@ class ConnectionManagerV3:
 
     def create_room(self,client_connection:ClientConnection): #room_id:str->
 
-        #Generate group id
+        #Generate room id
         while True:
             alphabet=string.ascii_uppercase + string.digits
             room_id=''.join(secrets.choice(alphabet) for _ in range(6))
@@ -84,21 +84,21 @@ class ConnectionManagerV3:
 
     async def broadcast_room(self,client_connection:ClientConnection,payload:dict,need_client:bool=True):
 
-        group_id=payload['group_id']
+        room_id=payload['room_id']
 
-        #check if group exist
-        if  group_id not in self.rooms:
+        #check if room exist
+        if  room_id not in self.rooms:
             return
 
         if need_client:
-            if  client_connection not in self.rooms[group_id]:
+            if  client_connection not in self.rooms[room_id]:
                 return
 
-            if group_id not in client_connection.rooms:
+            if room_id not in client_connection.rooms:
                 return
             
 
-        room=self.rooms[group_id]
+        room=self.rooms[room_id]
 
         for recipient in room:
             webskt=recipient.websocket
