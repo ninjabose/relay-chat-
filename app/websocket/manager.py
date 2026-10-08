@@ -3,7 +3,9 @@ import secrets
 import string
 
 from app.websocket.connection import ClientConnection
-from app.websocket.events import IdentifyEvent,JoinResult,LeaveResult
+from app.websocket.events.server import JoinResult,LeaveResult
+from app.websocket.events.client import InClientIdentifyEvent
+#from app.websocket.events.events import IdentifyEvent,JoinResult,LeaveResult
 
 
 class ConnectionManagerV3:
@@ -35,7 +37,7 @@ class ConnectionManagerV3:
         self.clients[websocket].rooms.clear() #not needed auto garbage collector will delete it
         del self.clients[websocket]
 
-    async def join_room(self,client_connection:ClientConnection,room_id:str):
+    def join_room(self,client_connection:ClientConnection,room_id:str):
 
         if room_id not in self.rooms:
             return JoinResult.ROOM_NOT_FOUND
@@ -80,26 +82,27 @@ class ConnectionManagerV3:
 
         return LeaveResult.SUCCESS
 
-    async def broadcast_room(self,client_connection:ClientConnection,payload:dict):
+    async def broadcast_room(self,client_connection:ClientConnection,payload:dict,need_client:bool=True):
 
         group_id=payload['group_id']
 
-        if group_id not in self.rooms or client_connection not in self.rooms[group_id]:
+        #check if group exist
+        if  group_id not in self.rooms:
             return
 
-        if group_id not in client_connection.rooms:
-            return
+        if need_client:
+            if  client_connection not in self.rooms[group_id]:
+                return
+
+            if group_id not in client_connection.rooms:
+                return
+            
 
         room=self.rooms[group_id]
 
         for recipient in room:
             webskt=recipient.websocket
-            await webskt.send_json({
-                'from':client_connection.username,
-                'type':payload['type'],
-                'room_id':group_id,
-                'content':payload['message']
-            })
+            await webskt.send_json(payload)
 
         return
 

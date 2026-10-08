@@ -1,10 +1,13 @@
 from fastapi import FastAPI, WebSocket,WebSocketDisconnect
 
 
-from app.websocket.manager import ConnectionManager2
+from app.websocket.socket_route.websocket import router as chat_main_router
 
 app = FastAPI()
-manager=ConnectionManager2
+app.include_router(chat_main_router)
+
+
+
 
 
 
@@ -32,7 +35,7 @@ async def global_chat(websocket:WebSocket):
 '''
 
 
-@app.websocket('/group')
+'''@app.websocket('/group')
 async def group_chat(websocket:WebSocket):
     await websocket.accept()
     try:
@@ -50,7 +53,7 @@ async def group_chat(websocket:WebSocket):
                     continue
                 await manager.broadcast_room(data['target'],data['content'])
     except WebSocketDisconnect:
-        await manager.disconnect(websocket)
+        await manager.disconnect(websocket)'''
        
 
 

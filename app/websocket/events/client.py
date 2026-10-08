@@ -4,55 +4,36 @@ import re
 
 
 
-class Event(str,Enum):
+#CLIENT -> SERVER
+
+
+class ClientEventType(str,Enum):
     CREATE_ROOM='create_room'
     JOIN_ROOM='join_room'
     LEAVE_ROOM='leave_room'
     MESSAGE='message'
-    DISCONNECT='disconnect'
-
-class ServerEvent(str,Enum):
-    ROOM_CREATED='room_created'
-    ROOM_JOINED='room_joined'
-    ROOM_LEFT='room_left'
-    MESSAGE='message'
-    ERROR='error'
-
-class JoinResult(str,Enum):
-    SUCCESS='success'
-    ROOM_NOT_FOUND='room_not_found'
-    ALREADY_JOINED='already_joined'
-
-class LeaveResult(str,Enum):
-    SUCCESS='success'
-    ROOM_NOT_FOUND='room_not_found'
-    NOT_A_MEMBER='not_a_member'
 
 
-
-    
-
-class ClientEvents(BaseModel):
-    event_type:Event
+class InClientCommEvent(BaseModel):
+    event_type:ClientEventType
     group_id:str|None=None
     message:str|None=None
 
     @model_validator(mode='after')
     def validate_events(self):
         if self.event_type in {
-            Event.JOIN_ROOM,Event.LEAVE_ROOM,Event.MESSAGE
+            ClientEventType.JOIN_ROOM,ClientEventType.LEAVE_ROOM,ClientEventType.MESSAGE
         }:
             if not self.group_id or not self.group_id.strip():
                 raise ValueError('GroupId Invalid')
 
-
         #check message
-        if self.event_type == Event.MESSAGE:
+        if self.event_type == ClientEventType.MESSAGE:
             if not self.message or not self.message.strip():
                 raise ValueError('message can not be empty')
         return self
 
-class IdentifyEvent(BaseModel):
+class InClientIdentifyEvent(BaseModel):
     username:str=Field(min_length=5,max_length=25)
 
     @field_validator('username',mode='after')
@@ -66,20 +47,3 @@ class IdentifyEvent(BaseModel):
             raise ValueError("Username contains invalid characters")
 
         return value
-
-
-
-class ServerResponse(BaseModel):
-    event_type:ServerEvent
-    group_id:str|None=None
-    message:str|None=None
-    username:str|None=None
-    join_result:JoinResult|None=None
-    leave_result:LeaveResult|None=None
-
-
-
-        
-            
-
-        

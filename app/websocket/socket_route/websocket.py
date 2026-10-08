@@ -1,7 +1,11 @@
 from fastapi import APIRouter,WebSocket,WebSocketDisconnect,Depends
 
 
-from app.websocket.events import IdentifyEvent,ClientEvents,Event,ServerEvent,ServerResponse,JoinResult,LeaveResult
+#from app.websocket.events.events import IdentifyEvent,ClientEvents,Event,ServerEvent,ServerResponse,JoinResult,LeaveResult
+from app.websocket.events.client import InClientIdentifyEvent,InClientCommEvent,ClientEventType
+from app.websocket.events.server import ServerEventType,OutMessageEvent,OutRoomCreatedEvent,OutRoomJoinedEvent,OutRoomLeftEvent,JoinResult,LeaveResult,ErrorEvent
+
+
 from app.websocket.manager import ConnectionManagerV3 as manager
 
 
@@ -17,102 +21,85 @@ async def group_chat(websocket:WebSocket):
         #username receive
         username_data= await websocket.receive_json()
         #validation
-        username_input=IdentifyEvent.model_validate(username_data)
+        username_input=InClientIdentifyEvent.model_validate(username_data)
         #register client
         client_connection= manager.register(websocket,username_input.username)
 
         
         while True:
             data = await websocket.receive_json()
-            client_data= ClientEvents.model_validate(data)
+            client_data= InClientCommEvent.model_validate(data)
 
             #create room
-            if client_data.event_type == Event.CREATE_ROOM:
-                group_id= await manager.create_room(client_connection)
+            if client_data.event_type == ClientEventType.CREATE_ROOM:
+                room_id= await manager.create_room(client_connection)
 
-                response=ServerResponse(
-                    event_type=ServerEvent.ROOM_CREATED,
-                    group_id=group_id
+                response=OutRoomCreatedEvent(
+                    event_type=ServerEventType.ROOM_CREATED,
+                    room_id=room_id
                     )
                 await websocket.send_json(response.model_dump())
 
             #join room
-            elif client_data.event_type==Event.JOIN_ROOM:
-                 result=manager.join_room(client_connection,client_data.group_id)
+            elif client_data.event_type==ClientEventType.JOIN_ROOM:
+                 result=manager.join_room(client_connection,client_data.room_id)
 
                  if result == JoinResult.SUCCESS:
-                    response=ServerResponse(
-                        event_type=ServerEvent.ROOM_JOINED,
-                        group_id=client_data.group_id,
-                        join_result=result
 
+                    response=OutRoomJoinedEvent(
+                        username=client_connection.username,
+                        room_id=client_data.room_id
                     )
-                    payload={
-                        'group_id':client_data.group_id,
-                        'type':'event',
-                        'message':'joined room'
-                    }
-                    await manager.broadcast_room(client_connection,payload)
+                    await manager.broadcast_room(client_connection,response.model_dump())
+
+
                  elif result==JoinResult.ALREADY_JOINED:
-                    response=ServerResponse(
-                        event_type=ServerEvent.ERROR,
-                        group_id=client_data.group_id,
-                        result=result
+                    response=ErrorEvent(
+                        message='Room already joined!'
                     )
                     await websocket.send_json(response.model_dump())
+
+
                  elif result==JoinResult.ROOM_NOT_FOUND:
-                     response=ServerResponse(
-                        event_type=ServerEvent.ERROR,
-                        group_id=client_data.group_id,
-                        result=result
+                     response=ErrorEvent(
+                        message='Room does not exist or deleted!'
                     )
                      await websocket.send_json(response.model_dump())
 
             #leave room 
-            elif client_data.event_type==Event.LEAVE_ROOM:
-                 result=manager.leave_room(client_connection,client_data.group_id)
+            elif client_data.event_type==ClientEventType.LEAVE_ROOM:
+                 result=manager.leave_room(client_connection,client_data.room_id)
 
                  if result== LeaveResult.SUCCESS:
-                    response=ServerResponse(
-                        leave_result=result,
-                        event_type=ServerEvent.ROOM_LEFT,
-                        group_id=client_data.group_id
+
+                    response=OutRoomLeftEvent(
+                        username=client_connection.username,
+                        room_id=client_data.room_id
                     )
 
-                    payload={
-                        'group_id':client_data.group_id,
-                        'type':'event',
-                        'message':'left_room'
-                    }
+                    payload=response.model_dump()
                     #broadcast leave event - client won't get it because he left
-                    await manager.broadcast_room(client_connection,payload)
+                    await manager.broadcast_room(client_connection,payload,False)
+
                  elif result==LeaveResult.NOT_A_MEMBER:
-                    response=ServerResponse(
-                        leave_result=result,
-                        event_type=ServerEvent.ROOM_LEFT,
-                        group_id=client_data.group_id
+                    response=ErrorEvent(
+                        message='Not a member of the room you are trying to leave'
                     )
                  elif result==LeaveResult.ROOM_NOT_FOUND:
-                     response=ServerResponse(
-                        leave_result=result,
-                        event_type=ServerEvent.ROOM_LEFT,
-                        group_id=client_data.group_id
+                     response=ErrorEvent(
+                        message='Room does not exist!'
                     )
                  await websocket.send_json(response.model_dump())
 
 
             #message
-            elif client_data.event_type==Event.MESSAGE:
-                
-                response=ServerResponse(
-                    event_type=ServerEvent.MESSAGE,
-                    group_id=client_data.group_id,
+            elif client_data.event_type==ClientEventType.MESSAGE:  
+                payload=OutMessageEvent(
+                    username=client_connection.username,
+                    room_id=client_data.room_id,
                     message=client_data.message
-
                 )
+                await manager.broadcast_room(client_connection,payload.model_dump())
 
-                await manager.broadcast_room(client_connection,response.model_dump())
-
-            
     except WebSocketDisconnect:
         manager.unregister(websocket)
